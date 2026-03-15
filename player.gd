@@ -3,12 +3,12 @@ extends CharacterBody3D
 
 const SPEED = 5*TAU
 const JUMP_VELOCITY = 10.5
-var Camera : Camera3D
+var Camera : SpringArm3D
 
 
 func _ready() -> void:
 	global_position = get_node("../startposition").position
-	Camera = get_node("../MainCamera")
+	Camera = get_node("../Camera")
 
 func _physics_process(delta: float) -> void:
 	# Add the gravity.

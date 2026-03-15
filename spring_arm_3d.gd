@@ -1,4 +1,4 @@
-extends Camera3D
+extends SpringArm3D
 
 @export var followingDistance : float = 5.0
 @export var upVector : Vector3 = Vector3(0,1,0) # y axis
@@ -24,21 +24,52 @@ func _input(event: InputEvent) -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	if (event.is_action_released("toggleMouse")):
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	
+	# scroll callback
+	# can be shortened (remove following distance var)
+	if (event.is_action_pressed("zoomIn")):
+		if (followingDistance > 1.5):
+			followingDistance -= 0.1
+			spring_length = followingDistance
+	if (event.is_action_pressed("zoomOut")):
+		if (followingDistance < 10.0):
+			followingDistance += 0.1
+			spring_length = followingDistance
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	global_position = get_node("../startposition").global_position
 	Player = get_node("../Player")
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	spring_length = followingDistance
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:	
+func _process(_delta: float) -> void:	
+	
+	# spring arm 3d is very straight forward 
+	# set the rotation (this rotates the basis vectors)
+	# consequently rotates the arm direction too
+	rotation.x = pitch
+	rotation.y = yaw
+	
+	# then just update the position of the spring, put it where the player is
+	# the following distance is just the arm length (we set those when zoom changes)
+	global_position = Player.global_position
 
+
+
+
+
+
+# unused
+
+func oldCamera():
+	pass
 	# the above rotates every frame, so i guess reset it after, but that's just strange
 	# we instead get the basis vectors and rotate manually
-	var playerPosition = Player.get_global_position()
+	#var playerPosition = Player.get_global_position()
 	# camera forward direction (originally the forward z axis)
-	var fDir : Vector3 = Vector3(0,0,1)
+	#var fDir : Vector3 = Vector3(0,0,1)
 	# rotate this vector about (y axis) up direction
 	# this gives us where around the player (yaw)
 	# rotate the resulting vector about (x axis) right direction of the camera
@@ -54,46 +85,13 @@ func _process(delta: float) -> void:
 	# well that's just multiplying our old forward direction (expressed in x,y,z)
 	# with the change of basis matrix
 	# the result is a vector in the new coordinate space (the rotated version)
-	var newBasis : Basis = Basis.from_euler(Vector3(pitch, yaw, 0.0))
+	#var newBasis : Basis = Basis.from_euler(Vector3(pitch, yaw, 0.0))
 	
 	# compute the new forwardDirection
-	forwardDir = newBasis*fDir
+	#forwardDir = newBasis*fDir
 	
 	# update camera position
-	global_position = followingDistance*forwardDir + playerPosition
+	#global_position = followingDistance*forwardDir + playerPosition
 	
 	# update basis (this also rotates the camera)
-	basis = newBasis
-	
-	
-# now this works, except near the poles, the up vector
-# and the forward direction are almost similar
-# godot will also throw a warning 
-func cameraAttempt1() -> void :
-	var playerPosition : Vector3 = get_node("../Player").global_position
-	
-	# using spherical coordinates
-	# note in math x,y,z z is usually up
-	# we swap z axis and y axis in our game cause y is up
-	# phi is the pitch, theta is the yaw
-	# x = sin(phi)cos(theta) stays normal
-	# y = cos(phi) (up axis)
-	# z = sin(theta)sin(phi)
-	var x : float = sin(pitch)*cos(yaw)
-	var y : float = cos(pitch) 
-	var z : float = sin(yaw)*sin(pitch) 
-	
-	var cameraPos : Vector3 = Vector3(x,y,z)
-	
-	# vector will always stay normalized
-	
-	# following distance is rho, and it's just a scalar
-	var newPos : Vector3 = followingDistance*cameraPos + playerPosition
-	global_position = newPos
-	look_at_from_position(global_position, playerPosition, upVector)
-	
-	# another attempt
-	# rotate the camera basis vectors
-	#rotate(upVector, yaw)
-	#rotate(Vector3(1.0, 0.0, 0.0), pitch)
-	
+	#basis = newBasis
